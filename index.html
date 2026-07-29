@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Skin Blender — Скрещивание Скинов</title>
+    <!-- Подключение 3D библиотеки skinview3d -->
+    <script src="https://cdn.jsdelivr.net/npm/skinview3d@3.2.0/bundles/skinview3d.bundle.js"></script>
+    <style>
+        :root {
+            --bg-dark: #121418;
+            --card-bg: #1e222b;
+            --accent-color: #2ecc71;
+            --accent-hover: #27ae60;
+            --text-main: #f1f2f6;
+            --text-sub: #a4b0be;
+            --border-color: #2c313c;
+            --danger-color: #e74c3c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            color: var(--accent-color);
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: var(--text-sub);
+            font-size: 0.95rem;
+        }
+
+        /* Верхняя панель переключения слоев 3D просмотра */
+        .global-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            background: var(--card-bg);
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            max-width: 1200px;
+            margin: 0 auto 25px auto;
+            flex-wrap: wrap;
+        }
+
+        .global-controls label {
+            font-weight: 600;
+            color: var(--text-sub);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 5px;
+            background: #15181e;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .btn-group button {
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-group button.active {
+            background: var(--accent-color);
+            color: #121418;
+        }
+
+        /* Сетка 3D Просмотра */
+        .viewers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto 30px auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .card.result-card {
+            border: 2px solid var(--accent-color);
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.15);
+        }
+
+        .card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .model-badge {
+            font-size: 0.8rem;
+            background: #15181e;
+            padding: 4px 10px;
+            border-radius: 20px;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .model-select-wrapper {
+            margin-bottom: 10px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .model-select-wrapper label {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .model-select-wrapper select {
+            padding: 5px 10px;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            background: #15181e;
+            color: var(--accent-color);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            outline: none;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 300px;
+            background: #15181e;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .file-input-wrapper {
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn, .action-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background: #2c313c;
+            color: var(--text-main);
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            border: none;
+            transition: background 0.2s;
+        }
+
+        .upload-btn:hover, .action-btn:hover {
+            background: #3a4150;
+        }
+
+        .download-btn {
+            background: var(--accent-color);
+            color: #121418;
+            margin-top: 10px;
+        }
+
+        .download-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        /* 2D Пиксельный редактор */
+        .pixel-editor-section {
+            max-width: 1200px;
+            margin: 0 auto 30px auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .pixel-editor-section h2 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            text-align: center;
+            color: var(--accent-color);
+        }
+
+        .editor-workspace {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .tools-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #15181e;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            min-width: 220px;
+        }
+
+        .tools-panel h3 {
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+        }
+
+        .tool-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #2c313c;
+            color: var(--text-main);
+            border: 1px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .tool-btn:hover {
+            background: #3a4150;
+        }
+
+        .tool-btn.active {
+            background: var(--accent-color);
+            color: #121418;
+            border-color: #fff;
+        }
+
+        .color-picker-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #2c313c;
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+
+        .color-picker-wrapper input[type="color"] {
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: none;
+        }
+
+        .brush-size-group {
+            display: flex;
+            gap: 5px;
+        }
+
+        .brush-size-group button {
+            flex: 1;
+            padding: 6px;
+            background: #2c313c;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .brush-size-group button.active {
+            background: var(--accent-color);
+            color: #121418;
+        }
+
+        .canvas-2d-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkerboard-bg {
+            background-color: #181b22;
+            background-image: 
+                linear-gradient(45deg, #222630 25%, transparent 25%), 
+                linear-gradient(-45deg, #222630 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #222630 75%),
+                linear-gradient(-45deg, transparent 75%, #222630 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        #editor2DCanvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            cursor: crosshair;
+            display: block;
+        }
+
+        /* Настройки скрещивания */
+        .editor-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .editor-section h2 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            text-align: center;
+        }
+
+        /* Выбор редактируемого слоя */
+        .editor-layer-tabs {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            background: #15181e;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+
+        .editor-layer-tabs span {
+            font-weight: 600;
+            color: var(--text-sub);
+            font-size: 0.95rem;
+        }
+
+        .editor-layer-tabs .btn-group button {
+            padding: 8px 18px;
+            font-size: 0.9rem;
+        }
+
+        .quick-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .parts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
+        }
+
+        .part-card {
+            background: #15181e;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .part-card h3 {
+            font-size: 1rem;
+            color: var(--accent-color);
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .select-group {
+            margin-bottom: 10px;
+        }
+
+        .select-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            background: #2c313c;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        .faces-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        .face-item label {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            display: block;
+        }
+
+        canvas.hidden-canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Minecraft Skin Blender</h1>
+        <p>Скрещивайте скины и редактируйте результат: удаляйте лишние пиксели прямо на развертке!</p>
+    </header>
+
+    <!-- Глобальные переключатели слоев просмотра -->
+    <div class="global-controls">
+        <label>Просмотр в 3D:</label>
+        <div class="btn-group" id="layerBtnGroup">
+            <button class="active" onclick="setLayerMode('both')">Оба слоя (по умолчанию)</button>
+            <button onclick="setLayerMode('inner')">Только основной</button>
+            <button onclick="setLayerMode('outer')">Только наружный</button>
+        </div>
+    </div>
+
+    <!-- Область 3D Просмотра -->
+    <div class="viewers-grid">
+        <!-- Скин A -->
+        <div class="card">
+            <h2>Скин A</h2>
+            <div id="badgeA" class="model-badge">Тип: Steve (4px)</div>
+            <div class="canvas-container" id="containerA"></div>
+            <div class="file-input-wrapper">
+                <label for="fileA" class="upload-btn">📁 Загрузить Скин A</label>
+                <input type="file" id="fileA" accept="image/png">
+            </div>
+        </div>
+
+        <!-- Результат -->
+        <div class="card result-card">
+            <h2>Результат Скрещивания</h2>
+            
+            <div class="model-select-wrapper">
+                <label for="resultModelSelect">Тип модели результата:</label>
+                <select id="resultModelSelect" onchange="changeResultModel(this.value)">
+                    <option value="auto">⚡ Автовыбор (по скинам)</option>
+                    <option value="default">Steve (Толстый / 4px arms)</option>
+                    <option value="slim">Alex (Худой / 3px arms)</option>
+                </select>
+            </div>
+
+            <div class="canvas-container" id="containerResult"></div>
+            <button class="action-btn download-btn" onclick="downloadResult()">💾 Скачать Результат (.PNG)</button>
+        </div>
+
+        <!-- Скин B -->
+        <div class="card">
+            <h2>Скин B</h2>
+            <div id="badgeB" class="model-badge">Тип: Steve (4px)</div>
+            <div class="canvas-container" id="containerB"></div>
+            <div class="file-input-wrapper">
+                <label for="fileB" class="upload-btn">📁 Загрузить Скин B</label>
+                <input type="file" id="fileB" accept="image/png">
+            </div>
+        </div>
+    </div>
+
+    <!-- Встроенный 2D Пиксельный редактор результата -->
+    <div class="pixel-editor-section">
+        <h2>✏️ 2D Редактор Пикселей (Удаление / Подрисовка)</h2>
+        <p style="text-align: center; color: var(--text-sub); margin-bottom: 15px; font-size: 0.9rem;">
+            Зажмите ЛКМ и проводите по развертке скина, чтобы стирать пиксели (делать прозрачными) или рисовать.
+        </p>
+
+        <div class="editor-workspace">
+            <!-- Панель инструментов -->
+            <div class="tools-panel">
+                <h3>Инструменты</h3>
+                <button id="toolEraser" class="tool-btn active" onclick="setTool('eraser')">
+                    🧹 Ластик (Удалять пиксели)
+                </button>
+                <button id="toolPencil" class="tool-btn" onclick="setTool('pencil')">
+                    ✏️ Кисть (Рисовать)
+                </button>
+
+                <div class="color-picker-wrapper">
+                    <span style="font-size: 0.85rem; color: var(--text-sub);">Цвет кисти:</span>
+                    <input type="color" id="drawColorPicker" value="#2ecc71">
+                </div>
+
+                <h3>Размер кисти/ластика</h3>
+                <div class="brush-size-group">
+                    <button id="btnSize1" class="active" onclick="setBrushSize(1)">1px</button>
+                    <button id="btnSize2" onclick="setBrushSize(2)">2px</button>
+                    <button id="btnSize3" onclick="setBrushSize(3)">3px</button>
+                </div>
+
+                <h3>Фильтры подсветки</h3>
+                <label style="font-size: 0.85rem; color: var(--text-sub); display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="checkbox" id="toggleLayerHighlight" onchange="draw2DEditorCanvas()">
+                    Подсветить зоны текущего редактируемого слоя
+                </label>
+
+                <button class="action-btn" style="background: var(--danger-color); margin-top: 10px;" onclick="resetCustomEdits()">
+                    🔄 Сбросить ручные правки
+                </button>
+            </div>
+
+            <!-- Холст редактирования -->
+            <div class="canvas-2d-container">
+                <div class="checkerboard-bg">
+                    <canvas id="editor2DCanvas" width="384" height="384"></canvas>
+                </div>
+                <span style="font-size: 0.8rem; color: var(--text-sub);">Развертка 64x64 пикселей (Масштаб 6x)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Панель управления скрещиванием -->
+    <div class="editor-section">
+        <h2>Настройки скрещивания частей тела</h2>
+        
+        <!-- Вкладки выбора редактируемого слоя -->
+        <div class="editor-layer-tabs">
+            <span>Редактируемый слой:</span>
+            <div class="btn-group">
+                <button id="editTabInner" class="active" onclick="switchEditLayer('inner')">👕 Нижний (Основной слой)</button>
+                <button id="editTabOuter" onclick="switchEditLayer('outer')">🧥 Верхний (Наружный слой)</button>
+            </div>
+        </div>
+
+        <!-- Быстрые действия -->
+        <div class="quick-actions">
+            <button class="action-btn" style="width: auto;" onclick="setAllParts('A')">Всё из Скина A</button>
+            <button class="action-btn" style="width: auto;" onclick="setAllParts('B')">Всё из Скина B</button>
+            <button class="action-btn" style="width: auto;" onclick="setAllParts('A_over_B')">A поверх B (Накложение)</button>
+            <button class="action-btn" style="width: auto;" onclick="setAllParts('B_over_A')">B поверх A (Накложение)</button>
+            <button class="action-btn" style="width: auto;" onclick="setAllParts('mix50')">Шахматка (50/50)</button>
+            <button class="action-btn" style="width: auto;" onclick="setAllParts('random')">Случайные пиксели</button>
+        </div>
+
+        <div class="parts-grid" id="partsConfigContainer"></div>
+    </div>
+
+    <!-- Скрытые холсты 64x64 -->
+    <canvas id="canvasA" class="hidden-canvas" width="64" height="64"></canvas>
+    <canvas id="canvasB" class="hidden-canvas" width="64" height="64"></canvas>
+    <canvas id="canvasResult" class="hidden-canvas" width="64" height="64"></canvas>
+
+    <script>
+        let viewerA, viewerB, viewerResult;
+        let modelTypeA = 'default';
+        let modelTypeB = 'default';
+        let userResultModelChoice = 'auto';
+        let currentLayerMode = 'both';
+        let activeEditingLayer = 'inner';
+
+        // 2D Пиксельный редактор
+        let currentTool = 'eraser';
+        let brushSize = 1;
+        let isDrawing2D = false;
+        let customPixelEdits = new Array(64 * 64).fill(null);
+
+        const PART_NAMES = {
+            head: "Голова",
+            torso: "Туловище",
+            rightArm: "Правая рука",
+            leftArm: "Левая рука",
+            rightLeg: "Правая нога",
+            leftLeg: "Левая нога"
+        };
+
+        const FACE_NAMES = {
+            front: "Лицо / Перед",
+            back: "Затылок / Спина",
+            top: "Верх",
+            bottom: "Низ",
+            left: "Лево",
+            right: "Право"
+        };
+
+        const SKIN_UV = {
+            head: {
+                top:    { inner: [8, 0, 8, 8],   outer: [40, 0, 8, 8] },
+                bottom: { inner: [16, 0, 8, 8],  outer: [48, 0, 8, 8] },
+                right:  { inner: [0, 8, 8, 8],   outer: [32, 8, 8, 8] },
+                front:  { inner: [8, 8, 8, 8],   outer: [40, 8, 8, 8] },
+                left:   { inner: [16, 8, 8, 8],  outer: [48, 8, 8, 8] },
+                back:   { inner: [24, 8, 8, 8],  outer: [56, 8, 8, 8] }
+            },
+            torso: {
+                top:    { inner: [20, 16, 8, 4],  outer: [20, 32, 8, 4] },
+                bottom: { inner: [28, 16, 8, 4],  outer: [28, 32, 8, 4] },
+                right:  { inner: [16, 20, 4, 12], outer: [16, 36, 4, 12] },
+                front:  { inner: [20, 20, 8, 12], outer: [20, 36, 8, 12] },
+                left:   { inner: [28, 20, 4, 12], outer: [28, 36, 4, 12] },
+                back:   { inner: [32, 20, 8, 12], outer: [32, 36, 8, 12] }
+            },
+            rightArm: {
+                default: {
+                    top:    { inner: [44, 16, 4, 4],  outer: [44, 32, 4, 4] },
+                    bottom: { inner: [48, 16, 4, 4],  outer: [48, 32, 4, 4] },
+                    right:  { inner: [40, 20, 4, 12], outer: [40, 36, 4, 12] },
+                    front:  { inner: [44, 20, 4, 12], outer: [44, 36, 4, 12] },
+                    left:   { inner: [48, 20, 4, 12], outer: [48, 36, 4, 12] },
+                    back:   { inner: [52, 20, 4, 12], outer: [52, 36, 4, 12] }
+                },
+                slim: {
+                    top:    { inner: [44, 16, 3, 4],  outer: [44, 32, 3, 4] },
+                    bottom: { inner: [47, 16, 3, 4],  outer: [47, 32, 3, 4] },
+                    right:  { inner: [40, 20, 4, 12], outer: [40, 36, 4, 12] },
+                    front:  { inner: [44, 20, 3, 12], outer: [44, 36, 3, 12] },
+                    left:   { inner: [47, 20, 4, 12], outer: [47, 36, 4, 12] },
+                    back:   { inner: [51, 20, 3, 12], outer: [51, 36, 3, 12] }
+                }
+            },
+            leftArm: {
+                default: {
+                    top:    { inner: [36, 48, 4, 4],  outer: [52, 48, 4, 4] },
+                    bottom: { inner: [40, 48, 4, 4],  outer: [56, 48, 4, 4] },
+                    right:  { inner: [32, 52, 4, 12], outer: [48, 52, 4, 12] },
+                    front:  { inner: [36, 52, 4, 12], outer: [52, 52, 4, 12] },
+                    left:   { inner: [40, 52, 4, 12], outer: [56, 52, 4, 12] },
+                    back:   { inner: [44, 52, 4, 12], outer: [60, 52, 4, 12] }
+                },
+                slim: {
+                    top:    { inner: [36, 48, 3, 4],  outer: [52, 48, 3, 4] },
+                    bottom: { inner: [39, 48, 3, 4],  outer: [55, 48, 3, 4] },
+                    right:  { inner: [32, 52, 4, 12], outer: [48, 52, 4, 12] },
+                    front:  { inner: [36, 52, 3, 12], outer: [52, 52, 3, 12] },
+                    left:   { inner: [39, 52, 4, 12], outer: [55, 52, 4, 12] },
+                    back:   { inner: [43, 52, 3, 12], outer: [59, 52, 3, 12] }
+                }
+            },
+            rightLeg: {
+                top:    { inner: [4, 16, 4, 4],   outer: [4, 32, 4, 4] },
+                bottom: { inner: [8, 16, 4, 4],   outer: [8, 32, 4, 4] },
+                right:  { inner: [0, 20, 4, 12],  outer: [0, 36, 4, 12] },
+                front:  { inner: [4, 20, 4, 12],  outer: [4, 36, 4, 12] },
+                left:   { inner: [8, 20, 4, 12],  outer: [8, 36, 4, 12] },
+                back:   { inner: [12, 20, 4, 12], outer: [12, 36, 4, 12] }
+            },
+            leftLeg: {
+                top:    { inner: [20, 48, 4, 4],  outer: [4, 48, 4, 4] },
+                bottom: { inner: [24, 48, 4, 4],  outer: [8, 48, 4, 4] },
+                right:  { inner: [16, 52, 4, 12], outer: [0, 52, 4, 12] },
+                front:  { inner: [20, 52, 4, 12], outer: [4, 52, 4, 12] },
+                left:   { inner: [24, 52, 4, 12], outer: [8, 52, 4, 12] },
+                back:   { inner: [28, 52, 4, 12], outer: [12, 52, 4, 12] }
+            }
+        };
+
+        function createDefaultLayerConfig(defaultSource) {
+            const config = {};
+            Object.keys(PART_NAMES).forEach(part => {
+                config[part] = {
+                    mode: 'faces',
+                    faces: {
+                        front: part === 'head' || part === 'torso' ? defaultSource : 'B',
+                        back: 'B',
+                        top: 'A',
+                        bottom: 'B',
+                        left: 'A',
+                        right: 'B'
+                    }
+                };
+            });
+            return config;
+        }
+
+        let mergeState = {
+            inner: createDefaultLayerConfig('A'),
+            outer: createDefaultLayerConfig('A_over_B')
+        };
+
+        window.addEventListener('load', () => {
+            init3DViewers();
+            generateUIControls();
+            createDefaultSkins();
+            setupFileInputs();
+            init2DEditorEvents();
+        });
+
+        function init3DViewers() {
+            const createViewer = (containerId) => {
+                const viewer = new skinview3d.SkinViewer({
+                    canvas: document.createElement('canvas'),
+                    width: document.getElementById(containerId).clientWidth,
+                    height: 300
+                });
+                document.getElementById(containerId).appendChild(viewer.canvas);
+                viewer.autoRotate = true;
+                viewer.autoRotateSpeed = 0.6;
+                return viewer;
+            };
+
+            viewerA = createViewer('containerA');
+            viewerB = createViewer('containerB');
+            viewerResult = createViewer('containerResult');
+        }
+
+        function createDefaultSkins() {
+            const ctxA = document.getElementById('canvasA').getContext('2d');
+            const ctxB = document.getElementById('canvasB').getContext('2d');
+
+            ctxA.fillStyle = "#2ecc71"; ctxA.fillRect(0,0,64,64);
+            ctxA.fillStyle = "#27ae60"; ctxA.fillRect(8,8,8,8);
+            ctxA.fillStyle = "#e74c3c"; ctxA.fillRect(40,8,8,8);
+
+            ctxB.fillStyle = "#3498db"; ctxB.fillRect(0,0,64,64);
+            ctxB.fillStyle = "#2980b9"; ctxB.fillRect(8,8,8,8);
+            ctxB.fillStyle = "#f1c40f"; ctxB.fillRect(40,8,8,8);
+
+            modelTypeA = autoDetectModel(ctxA);
+            modelTypeB = autoDetectModel(ctxB);
+
+            document.getElementById('badgeA').innerText = `Тип: ${modelTypeA === 'slim' ? 'Alex (3px)' : 'Steve (4px)'}`;
+            document.getElementById('badgeB').innerText = `Тип: ${modelTypeB === 'slim' ? 'Alex (3px)' : 'Steve (4px)'}`;
+
+            updateViewers();
+        }
+
+        /**
+         * Улучшенное сканирование модели Steve (4px) vs Alex (3px).
+         * Проверяется множество точек 4-й колонки пикселей на руках.
+         */
+        function autoDetectModel(ctx) {
+            const imgData = ctx.getImageData(0, 0, 64, 64).data;
+            
+            // Координаты пикселей, которые есть ТОЛЬКО у 4px рук (Steve)
+            const steveUniquePixels = [
+                // Правая рука (Inner & Outer)
+                [54, 20], [54, 21], [54, 22], [54, 23], [54, 24], [54, 25], [55, 20], [55, 25],
+                [54, 36], [54, 37], [54, 38], [54, 39], [54, 40], [55, 36], [55, 40],
+                [50, 16], [51, 16], [50, 17], [51, 17],
+                [50, 32], [51, 32], [50, 33], [51, 33],
+                // Левая рука (Inner & Outer)
+                [46, 52], [47, 52], [46, 53], [47, 53], [46, 54], [47, 54],
+                [62, 52], [63, 52], [62, 53], [63, 53], [62, 54], [63, 54]
+            ];
+
+            for (let i = 0; i < steveUniquePixels.length; i++) {
+                const [x, y] = steveUniquePixels[i];
+                const alpha = imgData[(y * 64 + x) * 4 + 3];
+                if (alpha > 0) {
+                    return 'default'; // Найдена 4-я колонка пикселей -> Steve (4px)
+                }
+            }
+
+            return 'slim'; // Все специфичные пиксели прозрачные -> Alex (3px)
+        }
+
+        function setupFileInputs() {
+            const handleFile = (fileInput, canvasId, isA) => {
+                const file = fileInput.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.getElementById(canvasId);
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, 64, 64);
+                        ctx.drawImage(img, 0, 0, 64, 64);
+
+                        const detectedModel = autoDetectModel(ctx);
+                        if (isA) {
+                            modelTypeA = detectedModel;
+                            document.getElementById('badgeA').innerText = `Тип: ${modelTypeA === 'slim' ? 'Alex (3px)' : 'Steve (4px)'}`;
+                        } else {
+                            modelTypeB = detectedModel;
+                            document.getElementById('badgeB').innerText = `Тип: ${modelTypeB === 'slim' ? 'Alex (3px)' : 'Steve (4px)'}`;
+                        }
+
+                        // Сбрасываем старые ручные стирания при загрузке нового файла
+                        customPixelEdits = new Array(64 * 64).fill(null);
+
+                        updateViewers();
+                    };
+                    img.src = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            };
+
+            document.getElementById('fileA').addEventListener('change', (e) => handleFile(e.target, 'canvasA', true));
+            document.getElementById('fileB').addEventListener('change', (e) => handleFile(e.target, 'canvasB', false));
+        }
+
+        function changeResultModel(value) {
+            userResultModelChoice = value;
+            updateViewers();
+        }
+
+        function switchEditLayer(layer) {
+            activeEditingLayer = layer;
+            document.getElementById('editTabInner').classList.toggle('active', layer === 'inner');
+            document.getElementById('editTabOuter').classList.toggle('active', layer === 'outer');
+            generateUIControls();
+            draw2DEditorCanvas();
+        }
+
+        function partIsLeftArm(faceKey, isLeftArm) {
+            if (faceKey === 'back') {
+                return !isLeftArm;
+            }
+            return isLeftArm;
+        }
+
+        function getConsecutiveCroppedSampleX(dx, outW, inW, faceKey, isLeftArm) {
+            if (outW === inW) return dx;
+
+            if (inW === 4 && outW === 3) {
+                let cropFromStart = partIsLeftArm(faceKey, isLeftArm);
+
+                if (cropFromStart) {
+                    return dx + 1;
+                } else {
+                    return dx;
+                }
+            }
+
+            if (inW === 3 && outW === 4) {
+                let duplicateStart = partIsLeftArm(faceKey, isLeftArm);
+
+                if (duplicateStart) {
+                    return Math.min(2, dx);
+                } else {
+                    return Math.max(0, dx - 1);
+                }
+            }
+
+            let sampleDx = Math.floor((dx + 0.5) * inW / outW);
+            if (sampleDx >= inW) sampleDx = inW - 1;
+            return sampleDx;
+        }
+
+        function getSkinPixelRGBA(imgData, partKey, faceKey, layer, skinModel, dx, dy, outW, outH) {
+            let faceUVMap = SKIN_UV[partKey];
+            if (partKey === 'rightArm' || partKey === 'leftArm') {
+                faceUVMap = faceUVMap[skinModel];
+            }
+
+            const [inX, inY, inW, inH] = faceUVMap[faceKey][layer];
+            const isLeftArm = (partKey === 'leftArm');
+
+            const sampleDx = getConsecutiveCroppedSampleX(dx, outW, inW, faceKey, isLeftArm);
+            
+            let sampleDy = dy;
+            if (outH !== inH) {
+                sampleDy = Math.floor((dy + 0.5) * inH / outH);
+                if (sampleDy >= inH) sampleDy = inH - 1;
+            }
+
+            const px = inX + sampleDx;
+            const py = inY + sampleDy;
+            const idx = (py * 64 + px) * 4;
+
+            return [
+                imgData.data[idx],
+                imgData.data[idx + 1],
+                imgData.data[idx + 2],
+                imgData.data[idx + 3]
+            ];
+        }
+
+        function mergeSkins() {
+            const ctxA = document.getElementById('canvasA').getContext('2d');
+            const ctxB = document.getElementById('canvasB').getContext('2d');
+            const canvasRes = document.getElementById('canvasResult');
+            const ctxRes = canvasRes.getContext('2d');
+
+            const imgA = ctxA.getImageData(0, 0, 64, 64);
+            const imgB = ctxB.getImageData(0, 0, 64, 64);
+            const imgRes = ctxRes.createImageData(64, 64);
+
+            let resultModel;
+            if (userResultModelChoice === 'auto') {
+                resultModel = (modelTypeA === 'default' || modelTypeB === 'default') ? 'default' : 'slim';
+            } else {
+                resultModel = userResultModelChoice;
+            }
+
+            Object.keys(PART_NAMES).forEach(partKey => {
+                let resultUVMap = SKIN_UV[partKey];
+
+                if (partKey === 'rightArm' || partKey === 'leftArm') {
+                    resultUVMap = resultUVMap[resultModel];
+                }
+
+                ['inner', 'outer'].forEach(layer => {
+                    const partConfig = mergeState[layer][partKey];
+
+                    Object.keys(FACE_NAMES).forEach(faceKey => {
+                        const faceCoords = resultUVMap[faceKey];
+                        const sourceChoice = partConfig.mode === 'faces' ? partConfig.faces[faceKey] : partConfig.mode;
+
+                        const [outX, outY, outW, outH] = faceCoords[layer];
+
+                        for (let dy = 0; dy < outH; dy++) {
+                            for (let dx = 0; dx < outW; dx++) {
+                                const resPx = outX + dx;
+                                const resPy = outY + dy;
+                                const resIdx = (resPy * 64 + resPx) * 4;
+
+                                const rgbaA = getSkinPixelRGBA(imgA, partKey, faceKey, layer, modelTypeA, dx, dy, outW, outH);
+                                const rgbaB = getSkinPixelRGBA(imgB, partKey, faceKey, layer, modelTypeB, dx, dy, outW, outH);
+
+                                let chosenRGBA = rgbaA;
+
+                                if (sourceChoice === 'B') {
+                                    chosenRGBA = rgbaB;
+                                } else if (sourceChoice === 'A_over_B') {
+                                    chosenRGBA = (rgbaA[3] > 0) ? rgbaA : rgbaB;
+                                } else if (sourceChoice === 'B_over_A') {
+                                    chosenRGBA = (rgbaB[3] > 0) ? rgbaB : rgbaA;
+                                } else if (sourceChoice === 'mix50') {
+                                    chosenRGBA = ((dx + dy) % 2 === 0) ? rgbaA : rgbaB;
+                                } else if (sourceChoice === 'random') {
+                                    chosenRGBA = (Math.random() > 0.5) ? rgbaA : rgbaB;
+                                }
+
+                                imgRes.data[resIdx]     = chosenRGBA[0];
+                                imgRes.data[resIdx + 1] = chosenRGBA[1];
+                                imgRes.data[resIdx + 2] = chosenRGBA[2];
+                                imgRes.data[resIdx + 3] = chosenRGBA[3];
+                            }
+                        }
+                    });
+                });
+            });
+
+            // Наложение ручных пиксельных правок пользователей
+            for (let i = 0; i < 64 * 64; i++) {
+                const edit = customPixelEdits[i];
+                if (edit !== null) {
+                    const idx = i * 4;
+                    imgRes.data[idx]     = edit.r;
+                    imgRes.data[idx + 1] = edit.g;
+                    imgRes.data[idx + 2] = edit.b;
+                    imgRes.data[idx + 3] = edit.a;
+                }
+            }
+
+            ctxRes.putImageData(imgRes, 0, 0);
+            return resultModel;
+        }
+
+        function updateViewers() {
+            const dataUrlA = document.getElementById('canvasA').toDataURL();
+            const dataUrlB = document.getElementById('canvasB').toDataURL();
+            
+            const resultModel = mergeSkins();
+            const dataUrlResult = document.getElementById('canvasResult').toDataURL();
+
+            viewerA.loadSkin(dataUrlA, { model: modelTypeA });
+            viewerB.loadSkin(dataUrlB, { model: modelTypeB });
+            viewerResult.loadSkin(dataUrlResult, { model: resultModel });
+
+            applyLayerVisibility();
+            draw2DEditorCanvas();
+        }
+
+        function setLayerMode(mode) {
+            currentLayerMode = mode;
+            
+            const btns = document.querySelectorAll('#layerBtnGroup button');
+            btns.forEach(btn => btn.classList.remove('active'));
+            if (mode === 'both') btns[0].classList.add('active');
+            if (mode === 'inner') btns[1].classList.add('active');
+            if (mode === 'outer') btns[2].classList.add('active');
+
+            applyLayerVisibility();
+        }
+
+        function applyLayerVisibility() {
+            const showBase = (currentLayerMode === 'both' || currentLayerMode === 'inner');
+            const showOuter = (currentLayerMode === 'both' || currentLayerMode === 'outer');
+
+            const bodyParts = ['head', 'body', 'rightArm', 'leftArm', 'rightLeg', 'leftLeg'];
+
+            [viewerA, viewerB, viewerResult].forEach(viewer => {
+                if (!viewer || !viewer.playerObject || !viewer.playerObject.skin) return;
+                const skin = viewer.playerObject.skin;
+                
+                bodyParts.forEach(partName => {
+                    const part = skin[partName];
+                    if (part) {
+                        if (part.innerLayer) part.innerLayer.visible = showBase;
+                        if (part.outerLayer) part.outerLayer.visible = showOuter;
+                    }
+                });
+            });
+        }
+
+        /* ----------------------------------------------------
+           ЛОГИКА 2D РЕДАКТОРА ПИКСЕЛЕЙ (ЛАСТИК / КИСТЬ)
+        ---------------------------------------------------- */
+        function setTool(tool) {
+            currentTool = tool;
+            document.getElementById('toolEraser').classList.toggle('active', tool === 'eraser');
+            document.getElementById('toolPencil').classList.toggle('active', tool === 'pencil');
+        }
+
+        function setBrushSize(size) {
+            brushSize = size;
+            document.getElementById('btnSize1').classList.toggle('active', size === 1);
+            document.getElementById('btnSize2').classList.toggle('active', size === 2);
+            document.getElementById('btnSize3').classList.toggle('active', size === 3);
+        }
+
+        function resetCustomEdits() {
+            customPixelEdits = new Array(64 * 64).fill(null);
+            updateViewers();
+        }
+
+        function draw2DEditorCanvas() {
+            const editorCanvas = document.getElementById('editor2DCanvas');
+            const ctx = editorCanvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+
+            const canvasRes = document.getElementById('canvasResult');
+            ctx.clearRect(0, 0, editorCanvas.width, editorCanvas.height);
+
+            // Отрисовка развертки скина (масштаб 6x: 64x64 -> 384x384)
+            ctx.drawImage(canvasRes, 0, 0, 64, 64, 0, 0, 384, 384);
+
+            // Опциональная подсветка активного редактируемого слоя
+            const highlightChecked = document.getElementById('toggleLayerHighlight').checked;
+            if (highlightChecked) {
+                ctx.fillStyle = "rgba(46, 204, 113, 0.25)";
+                ctx.strokeStyle = "rgba(46, 204, 113, 0.8)";
+                ctx.lineWidth = 1;
+
+                const resultModel = (userResultModelChoice === 'auto') ? 
+                    ((modelTypeA === 'default' || modelTypeB === 'default') ? 'default' : 'slim') : userResultModelChoice;
+
+                Object.keys(PART_NAMES).forEach(partKey => {
+                    let resultUVMap = SKIN_UV[partKey];
+                    if (partKey === 'rightArm' || partKey === 'leftArm') {
+                        resultUVMap = resultUVMap[resultModel];
+                    }
+
+                    Object.keys(FACE_NAMES).forEach(faceKey => {
+                        const [x, y, w, h] = resultUVMap[faceKey][activeEditingLayer];
+                        ctx.fillRect(x * 6, y * 6, w * 6, h * 6);
+                        ctx.strokeRect(x * 6, y * 6, w * 6, h * 6);
+                    });
+                });
+            }
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 0, g: 0, b: 0 };
+        }
+
+        function apply2DPixelEdit(e) {
+            const editorCanvas = document.getElementById('editor2DCanvas');
+            const rect = editorCanvas.getBoundingClientRect();
+            
+            const scale = editorCanvas.width / rect.width;
+            const mouseX = (e.clientX - rect.left) * scale;
+            const mouseY = (e.clientY - rect.top) * scale;
+
+            const px = Math.floor(mouseX / 6);
+            const py = Math.floor(mouseY / 6);
+
+            if (px < 0 || px >= 64 || py < 0 || py >= 64) return;
+
+            const colorHex = document.getElementById('drawColorPicker').value;
+            const rgb = hexToRgb(colorHex);
+
+            const half = Math.floor(brushSize / 2);
+
+            for (let dy = -half; dy < brushSize - half; dy++) {
+                for (let dx = -half; dx < brushSize - half; dx++) {
+                    const targetX = px + dx;
+                    const targetY = py + dy;
+
+                    if (targetX >= 0 && targetX < 64 && targetY >= 0 && targetY < 64) {
+                        const idx = targetY * 64 + targetX;
+
+                        if (currentTool === 'eraser') {
+                            customPixelEdits[idx] = { r: 0, g: 0, b: 0, a: 0 };
+                        } else if (currentTool === 'pencil') {
+                            customPixelEdits[idx] = { r: rgb.r, g: rgb.g, b: rgb.b, a: 255 };
+                        }
+                    }
+                }
+            }
+
+            mergeSkins();
+            const dataUrlResult = document.getElementById('canvasResult').toDataURL();
+            const resultModel = (userResultModelChoice === 'auto') ? 
+                ((modelTypeA === 'default' || modelTypeB === 'default') ? 'default' : 'slim') : userResultModelChoice;
+            viewerResult.loadSkin(dataUrlResult, { model: resultModel });
+            draw2DEditorCanvas();
+        }
+
+        function init2DEditorEvents() {
+            const canvas = document.getElementById('editor2DCanvas');
+
+            canvas.addEventListener('mousedown', (e) => {
+                isDrawing2D = true;
+                apply2DPixelEdit(e);
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (isDrawing2D) {
+                    apply2DPixelEdit(e);
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                isDrawing2D = false;
+            });
+        }
+
+        /* ----------------------------------------------------
+           ИНТЕРФЕЙС НАСТРОЙКИ СКРЕЩИВАНИЯ
+        ---------------------------------------------------- */
+        function generateUIControls() {
+            const container = document.getElementById('partsConfigContainer');
+            container.innerHTML = '';
+
+            const currentLayerState = mergeState[activeEditingLayer];
+
+            Object.keys(PART_NAMES).forEach(partKey => {
+                const card = document.createElement('div');
+                card.className = 'part-card';
+
+                let facesHTML = '';
+                Object.keys(FACE_NAMES).forEach(faceKey => {
+                    const currentFaceVal = currentLayerState[partKey].faces[faceKey];
+                    facesHTML += `
+                        <div class="face-item">
+                            <label>${FACE_NAMES[faceKey]}</label>
+                            <select onchange="updateFaceConfig('${partKey}', '${faceKey}', this.value)">
+                                <option value="A" ${currentFaceVal === 'A' ? 'selected' : ''}>Скин A</option>
+                                <option value="B" ${currentFaceVal === 'B' ? 'selected' : ''}>Скин B</option>
+                                <option value="A_over_B" ${currentFaceVal === 'A_over_B' ? 'selected' : ''}>A поверх B</option>
+                                <option value="B_over_A" ${currentFaceVal === 'B_over_A' ? 'selected' : ''}>B поверх A</option>
+                                <option value="mix50" ${currentFaceVal === 'mix50' ? 'selected' : ''}>50/50 Пиксели</option>
+                                <option value="random" ${currentFaceVal === 'random' ? 'selected' : ''}>Случайно</option>
+                            </select>
+                        </div>
+                    `;
+                });
+
+                const currentPartMode = currentLayerState[partKey].mode;
+                card.innerHTML = `
+                    <h3>${PART_NAMES[partKey]}</h3>
+                    <div class="select-group">
+                        <label>Режим для ${activeEditingLayer === 'inner' ? 'нижнего' : 'верхнего'} слоя:</label>
+                        <select onchange="updatePartMode('${partKey}', this.value)">
+                            <option value="faces" ${currentPartMode === 'faces' ? 'selected' : ''}>⚙️ Настроить по граням (Лицо/Спина...)</option>
+                            <option value="A" ${currentPartMode === 'A' ? 'selected' : ''}>Заменить целиком из Скина A</option>
+                            <option value="B" ${currentPartMode === 'B' ? 'selected' : ''}>Заменить целиком из Скина B</option>
+                            <option value="A_over_B" ${currentPartMode === 'A_over_B' ? 'selected' : ''}>Скин A поверх B (Накложение)</option>
+                            <option value="B_over_A" ${currentPartMode === 'B_over_A' ? 'selected' : ''}>Скин B поверх A (Накложение)</option>
+                            <option value="mix50" ${currentPartMode === 'mix50' ? 'selected' : ''}>Шахматная смесь пикселей (50/50)</option>
+                            <option value="random" ${currentPartMode === 'random' ? 'selected' : ''}>Случайные пиксели</option>
+                        </select>
+                    </div>
+                    <div class="faces-grid" id="faces-grid-${partKey}" style="display: ${currentPartMode === 'faces' ? 'grid' : 'none'};">
+                        ${facesHTML}
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function updatePartMode(partKey, value) {
+            mergeState[activeEditingLayer][partKey].mode = value;
+            document.getElementById(`faces-grid-${partKey}`).style.display = value === 'faces' ? 'grid' : 'none';
+            updateViewers();
+        }
+
+        function updateFaceConfig(partKey, faceKey, value) {
+            mergeState[activeEditingLayer][partKey].faces[faceKey] = value;
+            updateViewers();
+        }
+
+        function setAllParts(mode) {
+            Object.keys(PART_NAMES).forEach(partKey => {
+                mergeState[activeEditingLayer][partKey].mode = mode;
+            });
+            generateUIControls();
+            updateViewers();
+        }
+
+        function downloadResult() {
+            const canvas = document.getElementById('canvasResult');
+            const link = document.createElement('a');
+            link.download = 'merged-minecraft-skin.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
